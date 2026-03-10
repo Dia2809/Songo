@@ -46,13 +46,13 @@
     GRAPHIC_DRIVERS="mali panfrost"
 
   # For maximum cross compatbility
-    PREFER_GLES="yes"
+    PREFER_GLES="no"
 
   # VULKAN_SUPPORT
-    VULKAN_SUPPORT="yes"
+    VULKAN_SUPPORT="no"
 
   # Vulkan implementation to use (vulkan-loader / no)
-    VULKAN="vulkan-loader"
+    VULKAN="no"
 
   # Displayserver to use (wl / no)
     DISPLAYSERVER="wl"
@@ -75,7 +75,7 @@
     FIRMWARE=""
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali libmali-vulkan"
+    ADDITIONAL_PACKAGES="libmali mygame"
     ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path

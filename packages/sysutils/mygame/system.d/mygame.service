@@ -1,0 +1,19 @@
+[Unit]
+Description=My Godot Game
+After=sway.service 
+
+[Service]
+Environment=HOME=/storage
+Environment=GODOT_SILENCE_ROOT_WARNING=1
+EnvironmentFile=/etc/profile
+
+ExecStart=/usr/bin/start_mygame.sh
+
+KillMode=process
+TimeoutStopSec=3
+Restart=on-failure
+RestartSec=2
+StartLimitInterval=0
+
+[Install]
+WantedBy=rocknix.target
