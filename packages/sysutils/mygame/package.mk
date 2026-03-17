@@ -17,7 +17,10 @@ makeinstall_target() {
   chmod 0755 ${INSTALL}/usr/bin/mygame
   cp  ${PKG_DIR}/sources/sdl_resolution  ${INSTALL}/usr/bin/sdl_resolution
   chmod 0755 ${INSTALL}/usr/bin/sdl_resolution
-
+  cp  ${PKG_DIR}/sources/launcher ${INSTALL}/usr/bin/launcher
+  chmod 0755 ${INSTALL}/usr/bin/launcher
+  cp ${PKG_DIR}/sources/actions.sh ${INSTALL}/usr/bin/actions.sh
+  chmod 0755 ${INSTALL}/usr/bin/actions.sh
   if [ -f ${PKG_DIR}/sources/mygame.pck ]; then
     cp ${PKG_DIR}/sources/mygame.pck ${INSTALL}/usr/share/mygame/
   fi

@@ -9,7 +9,7 @@
 # Check and log GPU driver
 CURRENT_DRIVER=$(gpudriver)
 echo "Current GPU driver: '${CURRENT_DRIVER}'"
-
+# Libmali shit so check if its Libmali or anything not Panfrost, problem will come on anything that uses Snapdragon
 if ! echo "${CURRENT_DRIVER}" | grep -q panfrost; then
   echo "panfrost not active, switching..."
   gpudriver panfrost
@@ -25,9 +25,9 @@ if [ -e /dev/dri/renderD128 ]; then
 else
   echo "WARNING: renderD128 not found!"
 fi
-
+systemctl stop essway
 systemctl restart sway
-sleep 3
+sleep 1.5
 
 RESOLUTION=$("sdl_resolution" 2>/dev/null | grep -a 'Current' | awk -F ': ' '{print $2}')
 
@@ -42,4 +42,5 @@ usbgadget prepare
 usbgadget network
 echo "Launching mygame at ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT}..."
 mkdir -p /storage/mygame
-exec /usr/bin/mygame --resolution ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} --main-pack /usr/share/mygame/mygame.pck
+/usr/bin/mygame --resolution ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} --main-pack /usr/share/mygame/mygame.pck
+launcher
