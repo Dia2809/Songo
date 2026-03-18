@@ -2,6 +2,11 @@
 
 Songo is an immutable Linux distribution for handheld gaming devices developed by currently two enthusiasts. It is still a fork of Rocknix and still has a lot of their functions, so big thanks to them
 
+# SUPPORTED DEVICES:
+- H700 Devices
+- RK3326 Devices (buggy?)
+- RK3566
+( I dont own others so thats where we are currently stuck. Im working on TSB Support but this will then work via a fork of Knulli and managed differently)
 ## Coming Features:
 - Easy Bluetooth connections
 - Wifi
