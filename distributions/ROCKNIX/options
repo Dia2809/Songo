@@ -14,10 +14,10 @@
   GIT_REPO="distribution"
 
 # Name of the Distro to build (full name, without special characters)
-  DISTRONAME="ROCKNIX"
+  DISTRONAME="SongoOS"
 
 # Name of the OS to build (full name, lower case, without special characters)
-  OSNAME="rocknix"
+  OSNAME="songoos"
 
 # short project description
   DESCRIPTION="An Open Source firmware."
@@ -199,7 +199,7 @@
   GET_HANDLER_SUPPORT="archive git file"
 
 # Partition labels for USB/SD installation media
-  DISTRO_BOOTLABEL="ROCKNIX"
+  DISTRO_BOOTLABEL="SONGO"
   DISTRO_DISKLABEL="STORAGE"
 
 # Settings package name - blank if not required
