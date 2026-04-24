@@ -6,8 +6,8 @@
 . /etc/profile
 
 CONFIG_FILE="/storage/.nfs-mount"
-MOUNT_POINT_NFS="/storage/games-external"
-MOUNT_POINT_ROM="/storage/roms"
+MOUNT_POINT_NFS="/storage/music-external"
+MOUNT_POINT_ROM="/storage/music"
 LOWER="external"
 UPPER="internal"
 
@@ -129,12 +129,11 @@ To use NFS, create the following file:
 $CONFIG_FILE
 
 Add a single line pointing to your NFS share.
-IMPORTANT: The share MUST contain a 'roms' folder!
 
 Examples:
-NFS_PATH=192.168.1.5:/volume1/retro_games
+NFS_PATH=192.168.1.5:/volume1/music
    OR
-NFS_PATH=my-nas.local:/volume1/retro_games
+NFS_PATH=my-nas.local:/volume1/music
 
 (Press any button to exit, or wait 30s)"
 
@@ -183,9 +182,9 @@ fi
 log_msg "NFS mounted successfully."
 
 # Prepare Overlay Directories
-WORK_DIR="/storage/games-${UPPER}/.tmp/games-workdir"
-UPPER_DIR="/storage/games-${UPPER}/roms"
-LOWER_DIR="/storage/games-${LOWER}/roms"
+WORK_DIR="/storage/music-${UPPER}/.tmp/music-workdir"
+UPPER_DIR="/storage/music-${UPPER}"
+LOWER_DIR="/storage/music-${LOWER}"
 
 mkdir -p "$WORK_DIR"
 mkdir -p "$UPPER_DIR"
