@@ -79,10 +79,8 @@ jobs:
       - name: Set lowercase owner name
         id: set-envs
         run: |
-          OWNER_LC="${OWNER,,}"
+          OWNER_LC="rocknix"
           echo "OWNER_OUTPUT=${OWNER_LC}" >> $GITHUB_OUTPUT
-        env:
-          OWNER: ${{ github.repository_owner }}
       - id: generate
         shell: bash
         run: |
