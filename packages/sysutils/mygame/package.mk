@@ -9,7 +9,7 @@ PKG_TOOLCHAIN="manual"
 PKG_DEPENDS_TARGET="toolchain SDL2 SDL2_ttf"
 
 make_target() {
-  ${TARGET_CXX} ${TARGET_CXXFLAGS} \
+  ${CXX} ${CXXFLAGS} \
     -std=c++17 \
     $(${SYSROOT_PREFIX}/usr/bin/sdl2-config --cflags 2>/dev/null || \
       echo "-I${SYSROOT_PREFIX}/usr/include/SDL2 -D_REENTRANT") \
@@ -18,7 +18,7 @@ make_target() {
     $(${SYSROOT_PREFIX}/usr/bin/sdl2-config --libs 2>/dev/null || \
       echo "-L${SYSROOT_PREFIX}/usr/lib -lSDL2") \
     -lSDL2_ttf \
-    ${TARGET_LDFLAGS}
+    ${LDFLAGS}
 }
 
 makeinstall_target() {
