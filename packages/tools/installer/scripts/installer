@@ -151,10 +151,12 @@ do_install_quick() {
     "/dev/mmcblk"*|"/dev/nvme"*)
       PART1="p1"
       PART2="p2"
+      PART3="p3"
       ;;
     *)
       PART1="1"
       PART2="2"
+      PART3="3"
       ;;
   esac
 
@@ -202,17 +204,26 @@ do_install_quick() {
 
     partsize_system_start=$PARTSIZE_SYSTEM_OFFSET
     partsize_system_end=$(((PARTSIZE_SYSTEM * 1024 * 1024 / 512) + partsize_system_start - 1))
-    partsize_storage_start=$((partsize_system_end + 1))
+    partsize_music_start=$((partsize_system_end + 1))
+    partsize_music_end=$(((PARTSIZE_MUSIC * 1024 * 1024 / 512) + partsize_music_start - 1))
+    partsize_storage_start=$((partsize_music_end + 1))
     partsize_storage_end=-1024
 
-    msg_progress_install "10" "Creating partition on $INSTALL_DEVICE"
+    msg_progress_install "10" "Creating system partition on $INSTALL_DEVICE"
     if [ "$GPT" = "1" ]; then
       parted -s $INSTALL_DEVICE unit s mkpart $DISKLABEL_SYSTEM fat16 -- $partsize_system_start $partsize_system_end >> $LOGFILE 2>&1
     else
       parted -s $INSTALL_DEVICE unit s mkpart primary fat16 -- $partsize_system_start $partsize_system_end >> $LOGFILE 2>&1
     fi
 
-    msg_progress_install "13" "Creating partition on $INSTALL_DEVICE"
+    msg_progress_install "12" "Creating music partition on $INSTALL_DEVICE"
+    if [ "$GPT" = "1" ]; then
+      parted -s $INSTALL_DEVICE unit s mkpart $DISKLABEL_MUSIC fat32 -- $partsize_music_start $partsize_music_end >> $LOGFILE 2>&1
+    else
+      parted -s $INSTALL_DEVICE unit s mkpart primary fat32 -- $partsize_music_start $partsize_music_end >> $LOGFILE 2>&1
+    fi
+
+    msg_progress_install "14" "Creating storage partition on $INSTALL_DEVICE"
     if [ "$GPT" = "1" ]; then
       parted -s $INSTALL_DEVICE unit s mkpart $DISKLABEL_STORAGE ext4 -- $partsize_storage_start $partsize_storage_end >> $LOGFILE 2>&1
     else
@@ -229,20 +240,26 @@ do_install_quick() {
     partprobe $INSTALL_DEVICE >> $LOGFILE 2>&1
 
     # create filesystem
-    msg_progress_install "23" "Creating filesystem on ${INSTALL_DEVICE}1"
+    msg_progress_install "23" "Creating FAT16 filesystem on ${INSTALL_DEVICE}${PART1}"
     mkfs.vfat -F 16 ${INSTALL_DEVICE}${PART1} >> $LOGFILE 2>&1
 
     msg_progress_install "25" "Set uuid and disklabel $DISKLABEL_SYSTEM on ${INSTALL_DEVICE}${PART1}"
-    dosfslabel ${INSTALL_DEVICE}${PART1}  $DISKLABEL_SYSTEM >> $LOGFILE 2>&1
+    dosfslabel ${INSTALL_DEVICE}${PART1} $DISKLABEL_SYSTEM >> $LOGFILE 2>&1
 
-    msg_progress_install "28" "Creating filesystem on ${INSTALL_DEVICE}${PART2}"
-    mke2fs -t ext4 -m 0 ${INSTALL_DEVICE}${PART2} >> $LOGFILE 2>&1
+    msg_progress_install "27" "Creating FAT32 filesystem on ${INSTALL_DEVICE}${PART2}"
+    mkfs.vfat -F 32 ${INSTALL_DEVICE}${PART2} >> $LOGFILE 2>&1
 
-    msg_progress_install "30" "Set uuid and disklabel $DISKLABEL_STORAGE on ${INSTALL_DEVICE}${PART2}"
-    tune2fs -U random -L $DISKLABEL_STORAGE  ${INSTALL_DEVICE}${PART2} >> $LOGFILE 2>&1
+    msg_progress_install "28" "Set uuid and disklabel $DISKLABEL_MUSIC on ${INSTALL_DEVICE}${PART2}"
+    dosfslabel ${INSTALL_DEVICE}${PART2} $DISKLABEL_MUSIC >> $LOGFILE 2>&1
+
+    msg_progress_install "29" "Creating ext4 filesystem on ${INSTALL_DEVICE}${PART3}"
+    mke2fs -t ext4 -m 0 ${INSTALL_DEVICE}${PART3} >> $LOGFILE 2>&1
+
+    msg_progress_install "30" "Set uuid and disklabel $DISKLABEL_STORAGE on ${INSTALL_DEVICE}${PART3}"
+    tune2fs -U random -L $DISKLABEL_STORAGE ${INSTALL_DEVICE}${PART3} >> $LOGFILE 2>&1
 
     UUID_SYSTEM="$(blkid --output udev ${INSTALL_DEVICE}${PART1} | grep ^ID_FS_UUID= | cut -d= -f2)"
-    UUID_STORAGE="$(blkid --output udev ${INSTALL_DEVICE}${PART2} | grep ^ID_FS_UUID= | cut -d= -f2)"
+    UUID_STORAGE="$(blkid --output udev ${INSTALL_DEVICE}${PART3} | grep ^ID_FS_UUID= | cut -d= -f2)"
 
     echo "" >> $LOGFILE
     echo "UUID_SYSTEM : ${UUID_SYSTEM}" >> $LOGFILE
@@ -307,8 +324,8 @@ EOF
       msg_progress_install "89" "Creating $TMPDIR/part2"
       mkdir -p $TMPDIR/part2 >> $LOGFILE 2>&1
 
-      msg_progress_install "90" "Mounting ${INSTALL_DEVICE}${PART2} to $TMPDIR/part2"
-      mount -t ext4 ${INSTALL_DEVICE}${PART2} $TMPDIR/part2 >> $LOGFILE 2>&1
+      msg_progress_install "90" "Mounting ${INSTALL_DEVICE}${PART3} to $TMPDIR/part2"
+      mount -t ext4 ${INSTALL_DEVICE}${PART3} $TMPDIR/part2 >> $LOGFILE 2>&1
 
       msg_progress_install "92" "Restoring backup"
       [ -f /flash/backup.tar.bz2 ] && tar -xjf /flash/backup.tar.bz2 -C $TMPDIR/part2 >> $LOGFILE 2>&1
