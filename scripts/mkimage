@@ -20,7 +20,8 @@ fi
 
 DISK_START_PADDING=$(((${SYSTEM_PART_START} + 2048 - 1) / 2048))
 DISK_GPT_PADDING=1
-DISK_SIZE=$((${DISK_START_PADDING} + ${SYSTEM_SIZE} + ${STORAGE_SIZE} + ${DISK_GPT_PADDING}))
+MUSIC_SIZE=${MUSIC_SIZE:-2048}
+DISK_SIZE=$((${DISK_START_PADDING} + ${SYSTEM_SIZE} + ${MUSIC_SIZE} + ${STORAGE_SIZE} + ${DISK_GPT_PADDING}))
 DISK_BASENAME="${TARGET_IMG}/${IMAGE_NAME}"
 if [ -n "${SUBDEVICE}" ]; then
   DISK_BASENAME="${DISK_BASENAME}-${SUBDEVICE}"
@@ -60,24 +61,28 @@ fi
 
 # write a disklabel
 echo "image: creating ${DISK_LABEL} partition table..."
-parted -s "${DISK}" mklabel ${DISK_LABEL}
+parted -s "${DISK}" mklabel ${DISK_LABEL} >/dev/null 2>&1
 sync
 
 # create partitions
 echo "image: creating partitions..."
 
 SYSTEM_PART_END=$((${SYSTEM_PART_START} + (${SYSTEM_SIZE} * 1024 * 1024 / 512) - 1))
-STORAGE_PART_START=$((${SYSTEM_PART_END} + 1))
+MUSIC_PART_START=$((${SYSTEM_PART_END} + 1))
+MUSIC_PART_END=$((${MUSIC_PART_START} + (${MUSIC_SIZE} * 1024 * 1024 / 512) - 1))
+STORAGE_PART_START=$((${MUSIC_PART_END} + 1))
 STORAGE_PART_END=$((${STORAGE_PART_START} + (${STORAGE_SIZE} * 1024 * 1024 / 512) - 1))
 
 if [ "${DISK_LABEL}" = "gpt" ]; then
-  parted -s "${DISK}" -a min unit s mkpart system fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END}
-  parted -s "${DISK}" -a min unit s mkpart storage ext4 ${STORAGE_PART_START} ${STORAGE_PART_END}
-  parted -s "${DISK}" set 1 legacy_boot on
+  parted -s "${DISK}" -a min unit s mkpart system fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" -a min unit s mkpart music fat32 ${MUSIC_PART_START} ${MUSIC_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" -a min unit s mkpart storage ext4 ${STORAGE_PART_START} ${STORAGE_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" set 1 legacy_boot on >/dev/null 2>&1
 else
-  parted -s "${DISK}" -a min unit s mkpart primary fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END}
-  parted -s "${DISK}" -a min unit s mkpart primary ext4 ${STORAGE_PART_START} ${STORAGE_PART_END}
-  parted -s "${DISK}" set 1 boot on
+  parted -s "${DISK}" -a min unit s mkpart primary fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" -a min unit s mkpart primary fat32 ${MUSIC_PART_START} ${MUSIC_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" -a min unit s mkpart primary ext4 ${STORAGE_PART_START} ${STORAGE_PART_END} >/dev/null 2>&1
+  parted -s "${DISK}" set 1 boot on >/dev/null 2>&1
 fi
 sync
 
@@ -111,6 +116,19 @@ e2fsck -n "${IMG_TMP}/part2.ext4" >"${SAVE_ERROR}" 2>&1 || show_error
 # merge part2 into disk image
 echo "image: merging part2 into disk image..."
 dd if="${IMG_TMP}/part2.ext4" of="${DISK}" bs=512 seek="${STORAGE_PART_START}" conv=fsync,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+
+# create music partition (FAT32) to format and merge
+echo "image: creating sparse file for music partition..."
+MUSIC_PART_COUNT=$((${MUSIC_PART_END} - ${MUSIC_PART_START} + 1))
+sync
+dd if=/dev/zero of="${IMG_TMP}/part_music.fat" bs=512 count=0 seek="${MUSIC_PART_COUNT}" conv=fsync >"${SAVE_ERROR}" 2>&1 || show_error
+
+echo "image: creating FAT32 filesystem on music partition..."
+mkfs.vfat -F 32 -S 512 -n "${DISTRO_MUSICLABEL}" "${IMG_TMP}/part_music.fat" >"${SAVE_ERROR}" 2>&1 || show_error
+sync
+
+echo "image: merging music partition into disk image..."
+dd if="${IMG_TMP}/part_music.fat" of="${DISK}" bs=512 seek="${MUSIC_PART_START}" conv=fsync,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
 
 # create disk image for virtual appliance
 if [ "${PROJECT}" = "Generic" ]; then
