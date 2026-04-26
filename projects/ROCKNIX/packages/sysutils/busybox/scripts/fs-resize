@@ -52,17 +52,54 @@ if [ -e /storage/.please_resize_me ] ; then
 
   # just in case
   if [ ! -z "$DISK" -a ! -z "$PART" ] ; then
-    umount $PART
+    # Music partition sits directly before storage
+    case $PART in
+      "/dev/mmcblk"*|"/dev/nvme"*)
+        MUSIC_PART="${DISK}p$((PARTNUM - 1))"
+        ;;
+      *)
+        MUSIC_PART="${DISK}$((PARTNUM - 1))"
+        ;;
+    esac
+
+    umount $MUSIC_PART 2>/dev/null
+    umount $PART 2>/dev/null
 
     echo "PARTITION RESIZING IN PROGRESS"
     echo ""
     echo "Please do not reboot or turn off your @DISTRONAME@ device!"
     echo ""
 
-    StartProgressLog spinner "Resizing partition...   " "parted -s -f -m $DISK resizepart $PARTNUM 100% >>$LOG 2>&1"
-    StartProgressLog spinner "Checking file system... " "e2fsck -f -p $PART >>$LOG 2>&1"
-    StartProgressLog spinner "Resizing file system... " "resize2fs $PART >>$LOG 2>&1"
-    StartProgressLog spinner "Regenerating UUIDs...   " "tune2fs $PART -U random >>$LOG 2>&1; fatlabel -i -r ${DISK}p1 >>$LOG 2>&1"
+    # Compute 90 / 10 split of all space after the system partition
+    DISK_SECTORS=$(parted -s -m $DISK unit s print 2>/dev/null | grep "^$DISK:" | cut -d: -f2 | tr -d 's')
+    SYS_END=$(parted -s -m $DISK unit s print 2>/dev/null | grep "^1:" | cut -d: -f3 | tr -d 's')
+    # Align music start to next 2048-sector boundary after system
+    MUSIC_START=$(( ((SYS_END / 2048) + 1) * 2048 ))
+    AVAIL=$((DISK_SECTORS - MUSIC_START - 2048))
+    # Music gets 90 %, aligned down to a 2048-sector boundary
+    MUSIC_SECTORS=$(( (AVAIL * 9 / 10 / 2048) * 2048 ))
+    MUSIC_END=$((MUSIC_START + MUSIC_SECTORS - 1))
+    STORAGE_START=$((MUSIC_END + 1))
+
+    DISK_LABEL=$(parted -s -m $DISK unit s print 2>/dev/null | grep "^$DISK:" | cut -d: -f6 | tr -d ';')
+    echo "DISK_SECTORS=${DISK_SECTORS} MUSIC=${MUSIC_START}-${MUSIC_END} STORAGE=${STORAGE_START}-end LABEL=${DISK_LABEL}" >>$LOG
+
+    # Remove old partitions (highest number first to avoid table gaps)
+    StartProgressLog spinner "Removing partitions...  " "parted -s $DISK rm $PARTNUM >>$LOG 2>&1; parted -s $DISK rm $((PARTNUM - 1)) >>$LOG 2>&1"
+
+    # Recreate: music (90 %) then storage (10 %, fills rest)
+    if [ "$DISK_LABEL" = "gpt" ]; then
+      StartProgressLog spinner "Creating music part...  " "parted -s $DISK unit s mkpart music fat32 ${MUSIC_START} ${MUSIC_END} >>$LOG 2>&1"
+      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart storage ext4 ${STORAGE_START} -1024s >>$LOG 2>&1"
+    else
+      StartProgressLog spinner "Creating music part...  " "parted -s $DISK unit s mkpart primary fat32 ${MUSIC_START} ${MUSIC_END} >>$LOG 2>&1"
+      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart primary ext4 ${STORAGE_START} -1024s >>$LOG 2>&1"
+    fi
+
+    StartProgressLog spinner "Probing partitions...   " "partprobe $DISK >>$LOG 2>&1; sleep 1"
+    StartProgressLog spinner "Formatting music...     " "mkfs.vfat -F 32 -n MUSIC $MUSIC_PART >>$LOG 2>&1"
+    StartProgressLog spinner "Formatting storage...   " "mke2fs -F -t ext4 -m 0 $PART >>$LOG 2>&1"
+    StartProgressLog spinner "Regenerating UUIDs...   " "tune2fs $PART -U random -L STORAGE >>$LOG 2>&1; fatlabel -i -r ${DISK}p1 >>$LOG 2>&1"
     StartProgressLog spinner "Syncing to disk...      " "sync >>$LOG 2>&1"
     StartProgress countdown "Rebooting in 5s...     " 5 "NOW"
   else
