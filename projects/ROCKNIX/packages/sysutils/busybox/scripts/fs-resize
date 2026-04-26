@@ -82,9 +82,11 @@ if [ -e /storage/.please_resize_me ] ; then
     MUSIC_SECTORS=$(( (AVAIL * 9 / 10 / 2048) * 2048 ))
     MUSIC_END=$((MUSIC_START + MUSIC_SECTORS - 1))
     STORAGE_START=$((MUSIC_END + 1))
+    # Use an explicit end sector — parted interprets a leading '-' as a flag
+    STORAGE_END=$((DISK_SECTORS - 2049))
 
     DISK_LABEL=$(parted -s -m $DISK unit s print 2>/dev/null | grep "^$DISK:" | cut -d: -f6 | tr -d ';')
-    echo "DISK_SECTORS=${DISK_SECTORS} MUSIC=${MUSIC_START}-${MUSIC_END} STORAGE=${STORAGE_START}-end LABEL=${DISK_LABEL}" >>$LOG
+    echo "DISK_SECTORS=${DISK_SECTORS} MUSIC=${MUSIC_START}-${MUSIC_END} STORAGE=${STORAGE_START}-${STORAGE_END} LABEL=${DISK_LABEL}" >>$LOG
 
     # Remove old partitions (highest number first to avoid table gaps)
     StartProgressLog spinner "Removing partitions...  " "parted -s $DISK rm $PARTNUM >>$LOG 2>&1; parted -s $DISK rm $((PARTNUM - 1)) >>$LOG 2>&1"
@@ -92,10 +94,10 @@ if [ -e /storage/.please_resize_me ] ; then
     # Recreate: music (90 %) then storage (10 %, fills rest)
     if [ "$DISK_LABEL" = "gpt" ]; then
       StartProgressLog spinner "Creating music part...  " "parted -s $DISK unit s mkpart music fat32 ${MUSIC_START} ${MUSIC_END} >>$LOG 2>&1"
-      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart storage ext4 ${STORAGE_START} -1024s >>$LOG 2>&1"
+      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart storage ext4 ${STORAGE_START} ${STORAGE_END} >>$LOG 2>&1"
     else
       StartProgressLog spinner "Creating music part...  " "parted -s $DISK unit s mkpart primary fat32 ${MUSIC_START} ${MUSIC_END} >>$LOG 2>&1"
-      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart primary ext4 ${STORAGE_START} -1024s >>$LOG 2>&1"
+      StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart primary ext4 ${STORAGE_START} ${STORAGE_END} >>$LOG 2>&1"
     fi
 
     StartProgressLog spinner "Probing partitions...   " "partprobe $DISK >>$LOG 2>&1; udevadm settle >>$LOG 2>&1"
