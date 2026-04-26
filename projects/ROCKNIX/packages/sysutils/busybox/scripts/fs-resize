@@ -52,13 +52,15 @@ if [ -e /storage/.please_resize_me ] ; then
 
   # just in case
   if [ ! -z "$DISK" -a ! -z "$PART" ] ; then
-    # Music partition sits directly before storage
+    # Music partition sits directly before storage; system partition is always 1
     case $PART in
       "/dev/mmcblk"*|"/dev/nvme"*)
         MUSIC_PART="${DISK}p$((PARTNUM - 1))"
+        SYS_PART="${DISK}p1"
         ;;
       *)
         MUSIC_PART="${DISK}$((PARTNUM - 1))"
+        SYS_PART="${DISK}1"
         ;;
     esac
 
@@ -96,10 +98,10 @@ if [ -e /storage/.please_resize_me ] ; then
       StartProgressLog spinner "Creating storage part.. " "parted -s $DISK unit s mkpart primary ext4 ${STORAGE_START} -1024s >>$LOG 2>&1"
     fi
 
-    StartProgressLog spinner "Probing partitions...   " "partprobe $DISK >>$LOG 2>&1; sleep 1"
+    StartProgressLog spinner "Probing partitions...   " "partprobe $DISK >>$LOG 2>&1; udevadm settle >>$LOG 2>&1"
     StartProgressLog spinner "Formatting music...     " "mkfs.vfat -F 32 -n MUSIC $MUSIC_PART >>$LOG 2>&1"
     StartProgressLog spinner "Formatting storage...   " "mke2fs -F -t ext4 -m 0 $PART >>$LOG 2>&1"
-    StartProgressLog spinner "Regenerating UUIDs...   " "tune2fs $PART -U random -L STORAGE >>$LOG 2>&1; fatlabel -i -r ${DISK}p1 >>$LOG 2>&1"
+    StartProgressLog spinner "Regenerating UUIDs...   " "tune2fs $PART -U random -L STORAGE >>$LOG 2>&1; fatlabel -i -r $SYS_PART >>$LOG 2>&1"
     StartProgressLog spinner "Syncing to disk...      " "sync >>$LOG 2>&1"
     StartProgress countdown "Rebooting in 5s...     " 5 "NOW"
   else
