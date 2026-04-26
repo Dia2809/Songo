@@ -195,12 +195,16 @@
 # Size of storage partition, in MB. Must be >=32
   STORAGE_SIZE=32
 
+# Size of music partition, in MB
+  MUSIC_SIZE=2048
+
 # Default supported get handlers (archive, git, file etc.)
   GET_HANDLER_SUPPORT="archive git file"
 
 # Partition labels for USB/SD installation media
   DISTRO_BOOTLABEL="SONGO"
   DISTRO_DISKLABEL="STORAGE"
+  DISTRO_MUSICLABEL="MUSIC"
 
 # Settings package name - blank if not required
   DISTRO_PKG_SETTINGS=""

@@ -1,0 +1,14 @@
+[Unit]
+Description=FAT32 Music Storage
+After=storage.mount
+Requires=storage.mount
+ConditionKernelCommandLine=!installer
+
+[Mount]
+What=/dev/disk/by-label/MUSIC
+Where=/storage/music
+Type=vfat
+Options=rw,uid=0,gid=0,fmask=0022,dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro
+
+[Install]
+WantedBy=multi-user.target
