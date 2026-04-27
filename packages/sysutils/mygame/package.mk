@@ -52,6 +52,9 @@ makeinstall_target() {
   chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/teardown_vol_indicator
   chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/SongoOS/setup
   chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/SongoOS/teardown
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/default/get_brightness
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/default/set_brightness
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/SongoOS/get_brightness
 }
 
 post_install() {
