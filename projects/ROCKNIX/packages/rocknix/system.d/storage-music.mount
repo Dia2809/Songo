@@ -10,7 +10,7 @@ ConditionKernelCommandLine=!installer
 What=/dev/disk/by-label/MUSIC
 Where=/storage/music
 Type=vfat
-Options=rw,uid=0,gid=0,fmask=0022,dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro
+Options=rw,uid=0,gid=0,fmask=0022,dmask=0022,codepage=437,iocharset=utf8,shortname=mixed
 
 [Install]
 WantedBy=multi-user.target
