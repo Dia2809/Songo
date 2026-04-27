@@ -45,6 +45,16 @@ makeinstall_target() {
   cp ${PKG_DIR}/sources/libswresample.so.6 ${INSTALL}/usr/lib/libswresample.so.6
   cp ${PKG_DIR}/sources/start_mygame.sh ${INSTALL}/usr/bin/start_mygame.sh
   chmod 0755 ${INSTALL}/usr/bin/start_mygame.sh
+
+  mkdir -p ${INSTALL}/usr/share/mygame/runtime
+  cp -r ${PKG_DIR}/sources/runtime/. ${INSTALL}/usr/share/mygame/runtime/
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/setup_vol_indicator
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/teardown_vol_indicator
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/SongoOS/setup
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/volume-indicator/SongoOS/teardown
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/default/get_brightness
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/default/set_brightness
+  chmod 0755 ${INSTALL}/usr/share/mygame/runtime/brightness/SongoOS/get_brightness
 }
 
 post_install() {
