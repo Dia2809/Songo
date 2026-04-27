@@ -1,7 +1,6 @@
 [Unit]
 Description=Create /storage/music mountpoint
-After=storage.mount
-Requires=storage.mount
+RequiresMountsFor=/storage
 Before=storage-music.mount
 DefaultDependencies=no
 
@@ -11,4 +10,4 @@ ExecStart=/bin/mkdir -p /storage/music
 RemainAfterExit=yes
 
 [Install]
-WantedBy=storage-music.mount
+WantedBy=multi-user.target
