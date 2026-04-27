@@ -9,13 +9,24 @@
 GAMEDIR="/usr/share/mygame"
 
 # Setup volume indicator
-SONGO_CFW_NAME="ROCKNIX"
-USE_SONGO_VOL_TCP_SERVER="1"
+: "${CFW_NAME:=SongoOS}"
+USE_SONGO_VOL_TCP_SERVER="0"
+SONGO_CFW_NAME="NONE"
+if [[ "$CFW_NAME" = "muOS" ]] || [[ "$CFW_NAME" = "knulli" ]] || [[ "$CFW_NAME" = "SongoOS" ]]; then
+    SONGO_CFW_NAME="${CFW_NAME}"
+elif [ -f /mnt/SDCARD/.system/version.txt ] && grep -q "NextUI" /mnt/SDCARD/.system/version.txt; then
+    SONGO_CFW_NAME="NextUI"
+elif [ -f /mnt/SDCARD/spruce/spruce ]; then
+    SONGO_CFW_NAME="Spruce"
+fi
+if [[ "$SONGO_CFW_NAME" != "NONE" ]]; then
+    USE_SONGO_VOL_TCP_SERVER="1"
+    if [ -f "${GAMEDIR}/runtime/volume-indicator/setup_vol_indicator" ]; then
+        sh "${GAMEDIR}/runtime/volume-indicator/setup_vol_indicator" "${SONGO_CFW_NAME}"
+    fi
+fi
 export SONGO_CFW_NAME
 export USE_SONGO_VOL_TCP_SERVER
-if [ -f "${GAMEDIR}/runtime/volume-indicator/setup_vol_indicator" ]; then
-  sh "${GAMEDIR}/runtime/volume-indicator/setup_vol_indicator" "${SONGO_CFW_NAME}"
-fi
 
 # Brightness detection
 export SYSFS_BL_BRIGHTNESS="$(find /sys/class/backlight/*/ -name brightness 2>/dev/null | head -n 1)"
@@ -43,8 +54,8 @@ NO_BRIGHT_FADE_AVAILABLE='0'
 SONGO_GET_BRIGHTNESS_PATH="${GAMEDIR}/runtime/brightness/default/get_brightness"
 SONGO_SET_BRIGHTNESS_PATH="${GAMEDIR}/runtime/brightness/default/set_brightness"
 
-if [[ "$BL_TYPE" = "TYPE1" ]] && [[ -e "${GAMEDIR}/runtime/brightness/ROCKNIX/get_brightness" ]]; then
-  SONGO_GET_BRIGHTNESS_PATH="${GAMEDIR}/runtime/brightness/ROCKNIX/get_brightness"
+if [[ "$BL_TYPE" = "TYPE1" ]] && [[ -e "${GAMEDIR}/runtime/brightness/SongoOS/get_brightness" ]]; then
+  SONGO_GET_BRIGHTNESS_PATH="${GAMEDIR}/runtime/brightness/SongoOS/get_brightness"
 fi
 
 if [ "$BL_TYPE" = "UNKNOWN" ]; then

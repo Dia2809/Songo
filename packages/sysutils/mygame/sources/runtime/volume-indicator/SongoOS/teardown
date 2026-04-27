@@ -1,0 +1,10 @@
+#!/bin/bash
+
+ORIGINAL="/usr/bin/volume"
+BACKUP="/tmp/songo-volume-original.sh"
+WRAPPER="/tmp/songo-volume-wrapper.sh"
+
+umount -l "$ORIGINAL"
+
+[ -f "$WRAPPER" ] && rm "$WRAPPER"
+[ -f "$BACKUP" ] && rm "$BACKUP"
