@@ -76,16 +76,6 @@ mkimage_dtb() {
     S922X)
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/"*.dtb ::
       ;;
-    H700)
-      mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ::
-      if [ -n "${SUBDEVICE}" ]; then
-        local specific_dtb="${RELEASE_DIR}/3rdparty/bootloader/$(get_fdt)"
-        if [ -f "${specific_dtb}" ]; then
-          echo "image: setting dtb.img to $(basename "${specific_dtb}")..."
-          mcopy "${specific_dtb}" ::/dtb.img
-        fi
-      fi
-      ;;
     *)
       mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ::
       ;;
