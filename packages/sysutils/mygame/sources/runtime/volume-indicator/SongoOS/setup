@@ -8,7 +8,8 @@ cp "$ORIGINAL" "$BACKUP"
 
 cat > "$WRAPPER" << 'EOF'
 #!/bin/bash
-/tmp/songo-volume-original.sh "$@"
+ORIGINAL="/tmp/songo-volume-original.sh"
+"$ORIGINAL" "$@"
 . /etc/profile.d/001-functions
 VOL=$(get_setting "audio.volume")
 echo "$VOL" | nc -w 1 127.0.0.1 23456
