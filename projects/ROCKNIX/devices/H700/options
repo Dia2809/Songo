@@ -2,11 +2,6 @@
 # setup device defaults
 ################################################################################
 
-  # Set to "yes" to produce one .img.gz per H700 device variant instead of
-  # a single generic image. Each image has the correct DTB pre-set so users
-  # just flash the file that matches their device.
-    SPLIT_IMAGES="yes"
-
   # The TARGET_CPU variable controls which processor should be targeted for
   # generated code.
     case ${TARGET_ARCH} in
