@@ -216,7 +216,7 @@ EOF
 CONFIGXML="${PROJECT_DIR}/${PROJECT}/config.xml"
 
 SUBDEVICES=$(xmlstarlet sel -t -m "//rocknix/${DEVICE}/*[@mkimage_options]" -v "name()" -n "${CONFIGXML}" 2>/dev/null | tr '\n' ' ')
-if [ "${SPLIT_IMAGES}" != "yes" ]; then
+if [ "${SPLIT_IMAGES:-yes}" != "yes" ]; then
   SUBDEVICES=""
 fi
 
