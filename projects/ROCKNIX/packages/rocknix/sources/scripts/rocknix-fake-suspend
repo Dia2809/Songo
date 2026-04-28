@@ -411,7 +411,11 @@ elif [[ "${SOURCE}" = "lid" && "${ACTION}" = "close" ]]; then
   ${DEBUG} && log $0 "Lid closed ..."
   touch ${LID_CLOSED_FLAG_FILE}
 
-  if [[ -f "${POWER_SUSPEND_ACTIVE_FLAG_FILE}" ]]; then
+  if [[ -f "/var/run/songo-music-active" ]]; then
+    # Music player is active — screen off only, keep audio running
+    ${DEBUG} && log $0 "Music active - screen off only"
+    display_off
+  elif [[ -f "${POWER_SUSPEND_ACTIVE_FLAG_FILE}" ]]; then
     # In a 'suspend' state from power button, do nothing
     ${DEBUG} && log $0 "Power suspend active - no action"
   else

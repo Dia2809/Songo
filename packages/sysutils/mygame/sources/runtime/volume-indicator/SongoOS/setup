@@ -8,6 +8,7 @@ cp "$ORIGINAL" "$BACKUP"
 
 cat > "$WRAPPER" << 'EOF'
 #!/bin/bash
+ORIGINAL="/tmp/songo-volume-original.sh"
 "$ORIGINAL" "$@"
 . /etc/profile.d/001-functions
 VOL=$(get_setting "audio.volume")

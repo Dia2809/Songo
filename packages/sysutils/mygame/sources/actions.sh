@@ -27,55 +27,22 @@ action_shutdown(){
 }
 
 # ════════════════════════════════════════════════════════
-#  BLUETOOTH  (bluez / bluetoothctl)
+#  BLUETOOTH  (delegates to rocknix-bluetooth)
 # ════════════════════════════════════════════════════════
-BT_CTL="bluetoothctl"
+BT="rocknix-bluetooth"
 
-action_bt_on(){
-    rfkill unblock bluetooth 2>/dev/null || true
-    systemctl start bluetooth 2>/dev/null || true
-    sleep 1
-    echo -e "power on\nquit" | $BT_CTL
-    log "Bluetooth on."
-}
-action_bt_off(){
-    echo -e "power off\nquit" | $BT_CTL
-    rfkill block bluetooth 2>/dev/null || true
-    log "Bluetooth off."
-}
-action_bt_scan(){
-    log "Scanning (10s)..."
-    timeout 12 $BT_CTL -- scan on &
-    sleep 10
-    timeout 2  $BT_CTL -- scan off || true
-    echo -e "devices\nquit" | $BT_CTL | grep "^Device"
-}
-action_bt_pair(){
-    local MAC="${1:?MAC required}"
-    log "Pairing $MAC..."
-    echo -e "pair $MAC\nquit" | $BT_CTL
-}
-action_bt_connect(){
-    local MAC="${1:?MAC required}"
-    log "Connecting $MAC..."
-    echo -e "connect $MAC\nquit" | $BT_CTL
-}
-action_bt_disconnect(){
-    local MAC="${1:?MAC required}"
-    echo -e "disconnect $MAC\nquit" | $BT_CTL
-}
-action_bt_forget(){
-    local MAC="${1:?MAC required}"
-    echo -e "remove $MAC\nquit" | $BT_CTL
-}
-action_bt_forget_all(){
-    local devices
-    devices=$(echo -e "paired-devices\nquit" | $BT_CTL | awk '/^Device/{print $2}')
-    for mac in $devices; do
-        log "  Removing $mac"
-        echo -e "remove $mac\nquit" | $BT_CTL || true
-    done
-    log "All paired devices removed."
+action_bt_on()           { $BT enable; }
+action_bt_off()          { $BT disable; }
+action_bt_scan()         { $BT start_live_devices; }
+action_bt_scan_stop()    { $BT stop_live_devices; }
+action_bt_list()         { $BT list; }
+action_bt_pair()         { $BT trust "${1:?MAC required}"; }
+action_bt_connect()      { $BT connect "${1:?MAC required}"; }
+action_bt_disconnect()   { $BT disconnect "${1:?MAC required}"; }
+action_bt_forget()       { $BT remove "${1:?MAC required}"; }
+action_bt_audio_sink()   {
+    # PipeWire sink name for connected BT audio device, if any
+    pactl list short sinks 2>/dev/null | awk '/bluez/{print $2}'
 }
 
 # ════════════════════════════════════════════════════════
@@ -152,14 +119,16 @@ case "$ACTION" in
     launch)          action_launch             ;;
     update)          action_update             ;;
     shutdown)        action_shutdown           ;;
-    bt_on)           action_bt_on              ;;
-    bt_off)          action_bt_off             ;;
-    bt_scan)         action_bt_scan            ;;
-    bt_pair)         action_bt_pair       "$@" ;;
-    bt_connect)      action_bt_connect    "$@" ;;
-    bt_disconnect)   action_bt_disconnect "$@" ;;
-    bt_forget)       action_bt_forget     "$@" ;;
-    bt_forget_all)   action_bt_forget_all      ;;
+    bt_on)           action_bt_on               ;;
+    bt_off)          action_bt_off              ;;
+    bt_scan)         action_bt_scan             ;;
+    bt_scan_stop)    action_bt_scan_stop        ;;
+    bt_list)         action_bt_list             ;;
+    bt_pair)         action_bt_pair        "$@" ;;
+    bt_connect)      action_bt_connect     "$@" ;;
+    bt_disconnect)   action_bt_disconnect  "$@" ;;
+    bt_forget)       action_bt_forget      "$@" ;;
+    bt_audio_sink)   action_bt_audio_sink       ;;
     wifi_on)         action_wifi_on            ;;
     wifi_off)        action_wifi_off           ;;
     wifi_scan)       action_wifi_scan          ;;
@@ -171,8 +140,9 @@ case "$ACTION" in
     *)
         echo "Usage: $0 <action> [args]"
         echo "  launch | update | shutdown"
-        echo "  bt_on | bt_off | bt_scan | bt_pair <mac> | bt_connect <mac>"
-        echo "  bt_disconnect <mac> | bt_forget <mac> | bt_forget_all"
+        echo "  bt_on | bt_off | bt_scan | bt_scan_stop | bt_list"
+        echo "  bt_pair <mac> | bt_connect <mac> | bt_disconnect <mac>"
+        echo "  bt_forget <mac> | bt_audio_sink"
         echo "  wifi_on | wifi_off | wifi_scan | wifi_connect <ssid> [pass]"
         echo "  wifi_disconnect | wifi_forget <ssid>"
         echo "  usb_ecm | usb_mtp"
