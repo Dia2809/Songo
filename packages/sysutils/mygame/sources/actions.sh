@@ -44,16 +44,15 @@ action_bt_off(){
     log "Bluetooth off."
 }
 action_bt_scan(){
+    # Scan for 10s, then print MAC<TAB>Name — one device per line
     log "Scanning (10s)..."
-    timeout 12 $BT_CTL -- scan on &
-    sleep 10
-    timeout 2  $BT_CTL -- scan off || true
-    echo -e "devices\nquit" | $BT_CTL | grep "^Device"
+    $BT_CTL --timeout 10 scan on > /dev/null 2>&1 || true
+    $BT_CTL devices | awk '/^Device/{mac=$2; $1=$2=""; sub(/^ +/,""); print mac "\t" $0}'
 }
 action_bt_pair(){
     local MAC="${1:?MAC required}"
     log "Pairing $MAC..."
-    echo -e "pair $MAC\nquit" | $BT_CTL
+    echo -e "pair $MAC\ntrust $MAC\nquit" | $BT_CTL
 }
 action_bt_connect(){
     local MAC="${1:?MAC required}"
@@ -76,6 +75,18 @@ action_bt_forget_all(){
         echo -e "remove $mac\nquit" | $BT_CTL || true
     done
     log "All paired devices removed."
+}
+action_bt_list_paired(){
+    # Print MAC<TAB>Name — one paired device per line
+    $BT_CTL paired-devices | awk '/^Device/{mac=$2; $1=$2=""; sub(/^ +/,""); print mac "\t" $0}'
+}
+action_bt_list_connected(){
+    # Print MAC<TAB>Name for devices currently connected
+    $BT_CTL devices Connected | awk '/^Device/{mac=$2; $1=$2=""; sub(/^ +/,""); print mac "\t" $0}'
+}
+action_bt_audio_sink(){
+    # Print the PipeWire/PulseAudio sink name for the connected BT audio device, if any
+    pactl list short sinks 2>/dev/null | awk '/bluez/{print $2}'
 }
 
 # ════════════════════════════════════════════════════════
@@ -158,8 +169,11 @@ case "$ACTION" in
     bt_pair)         action_bt_pair       "$@" ;;
     bt_connect)      action_bt_connect    "$@" ;;
     bt_disconnect)   action_bt_disconnect "$@" ;;
-    bt_forget)       action_bt_forget     "$@" ;;
-    bt_forget_all)   action_bt_forget_all      ;;
+    bt_forget)          action_bt_forget        "$@" ;;
+    bt_forget_all)      action_bt_forget_all         ;;
+    bt_list_paired)     action_bt_list_paired        ;;
+    bt_list_connected)  action_bt_list_connected     ;;
+    bt_audio_sink)      action_bt_audio_sink         ;;
     wifi_on)         action_wifi_on            ;;
     wifi_off)        action_wifi_off           ;;
     wifi_scan)       action_wifi_scan          ;;
@@ -173,6 +187,7 @@ case "$ACTION" in
         echo "  launch | update | shutdown"
         echo "  bt_on | bt_off | bt_scan | bt_pair <mac> | bt_connect <mac>"
         echo "  bt_disconnect <mac> | bt_forget <mac> | bt_forget_all"
+        echo "  bt_list_paired | bt_list_connected | bt_audio_sink"
         echo "  wifi_on | wifi_off | wifi_scan | wifi_connect <ssid> [pass]"
         echo "  wifi_disconnect | wifi_forget <ssid>"
         echo "  usb_ecm | usb_mtp"
