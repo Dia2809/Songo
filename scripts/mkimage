@@ -82,7 +82,6 @@ else
   parted -s "${DISK}" -a min unit s mkpart primary fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END} >/dev/null 2>&1
   parted -s "${DISK}" -a min unit s mkpart primary fat32 ${MUSIC_PART_START} ${MUSIC_PART_END} >/dev/null 2>&1
   parted -s "${DISK}" -a min unit s mkpart primary ext4 ${STORAGE_PART_START} ${STORAGE_PART_END} >/dev/null 2>&1
-  parted -s "${DISK}" set 1 boot on >/dev/null 2>&1
 fi
 sync
 
