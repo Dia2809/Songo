@@ -7,6 +7,11 @@
 > "/storage/mygame/log.txt" && exec > >(tee "/storage/mygame/log.txt") 2>&1
 
 GAMEDIR="/usr/share/mygame"
+MUSIC_ACTIVE_FLAG="/var/run/songo-music-active"
+
+# Signal to rocknix-fake-suspend that music is playing (lid close = screen off only)
+touch "${MUSIC_ACTIVE_FLAG}"
+trap "rm -f '${MUSIC_ACTIVE_FLAG}'" EXIT
 
 # Setup volume indicator
 : "${CFW_NAME:=SongoOS}"
