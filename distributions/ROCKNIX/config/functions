@@ -216,9 +216,6 @@ EOF
 CONFIGXML="${PROJECT_DIR}/${PROJECT}/config.xml"
 
 SUBDEVICES=$(xmlstarlet sel -t -m "//rocknix/${DEVICE}/*[@mkimage_options]" -v "name()" -n "${CONFIGXML}" 2>/dev/null | tr '\n' ' ')
-if [ "${SPLIT_IMAGES}" != "yes" ]; then
-  SUBDEVICES=""
-fi
 
 get_kernel_make_extracmd() {
   local DTB_PREFIX
