@@ -327,11 +327,11 @@ bool App::runMenu(const std::string& title, std::vector<MenuItem>& items,
                 switch (ev.cbutton.button) {
                     case SDL_CONTROLLER_BUTTON_DPAD_UP:   moveUp(); break;
                     case SDL_CONTROLLER_BUTTON_DPAD_DOWN: moveDn(); break;
-                    case SDL_CONTROLLER_BUTTON_A:
+                    case SDL_CONTROLLER_BUTTON_B:  // physical A (East) on Nintendo-layout pads
                     case SDL_CONTROLLER_BUTTON_START:
                         if (!items.empty()) items[sel].action();
                         break;
-                    case SDL_CONTROLLER_BUTTON_B:
+                    case SDL_CONTROLLER_BUTTON_A:  // physical B (South) on Nintendo-layout pads
                     case SDL_CONTROLLER_BUTTON_BACK:
                         if (gc) SDL_GameControllerClose(gc);
                         return false;
