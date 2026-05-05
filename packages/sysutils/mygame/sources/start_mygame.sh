@@ -113,4 +113,20 @@ if [ -f "${GAMEDIR}/runtime/volume-indicator/teardown_vol_indicator" ]; then
   sh "${GAMEDIR}/runtime/volume-indicator/teardown_vol_indicator" "${SONGO_CFW_NAME}"
 fi
 
+# Generate a gamecontrollerdb for the launcher with xbox layout so physical
+# A (East) → SDL BUTTON_A (confirm) and B (South) → SDL BUTTON_B (back).
+# We source the ROCKNIX gamecontroller functions and call create_controller_db
+# directly with ABUT/BBUT/XBUT/YBUT set for the xbox layout swap.
+LAUNCHER_CTRLDB="/tmp/mygame-gamecontrollerdb.txt"
+if [ -f /etc/profile.d/100-gamecontroller-functions ]; then
+  ( . /etc/profile.d/100-gamecontroller-functions
+    ABUT="b" BBUT="a" XBUT="y" YBUT="x"
+    create_controller_db "xbox" "/tmp/es_input.cfg" "${LAUNCHER_CTRLDB}"
+  ) 2>/dev/null || true
+fi
+if [ ! -s "${LAUNCHER_CTRLDB}" ] && [ -f "/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt" ]; then
+  cp "/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt" "${LAUNCHER_CTRLDB}"
+fi
+[ -s "${LAUNCHER_CTRLDB}" ] && export SDL_GAMECONTROLLERCONFIG_FILE="${LAUNCHER_CTRLDB}"
+
 launcher
