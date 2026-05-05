@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # actions.sh — /usr/bin/actions.sh
 # Usage: actions.sh <action> [args...]
-set -euo pipefail
 
 ACTION="${1:-help}"
 shift || true
@@ -33,7 +32,15 @@ BT="rocknix-bluetooth"
 
 action_bt_on()           { $BT enable; }
 action_bt_off()          { $BT disable; }
-action_bt_scan()         { $BT start_live_devices; }
+action_bt_scan(){
+    # Enable scanning for ~5 s then list discovered devices in
+    # "Device MAC Name" format expected by parseBtDevices() in the launcher.
+    bluetoothctl -- scan on  >/dev/null 2>&1 &
+    local SCAN_PID=$!
+    sleep 5
+    kill "$SCAN_PID" 2>/dev/null || true
+    bluetoothctl -- devices 2>/dev/null
+}
 action_bt_scan_stop()    { $BT stop_live_devices; }
 action_bt_list()         { $BT list; }
 action_bt_pair()         { $BT trust "${1:?MAC required}"; }
@@ -46,59 +53,43 @@ action_bt_audio_sink()   {
 }
 
 # ════════════════════════════════════════════════════════
-#  WI-FI  (iwd / iwctl)
+#  WI-FI  (delegates to wifictl)
 # ════════════════════════════════════════════════════════
-IWD_IFACE="${WIFI_IFACE:-wlan0}"
-_iwctl(){ iwctl "$@" 2>/dev/null; }
+WIFICTL="wifictl"
 
 action_wifi_on(){
     rfkill unblock wifi 2>/dev/null || true
-    systemctl start iwd 2>/dev/null || true
-    sleep 1
-    _iwctl device "$IWD_IFACE" set-property Powered on
     log "Wi-Fi enabled."
 }
 action_wifi_off(){
-    _iwctl device "$IWD_IFACE" set-property Powered off
     rfkill block wifi 2>/dev/null || true
     log "Wi-Fi disabled."
 }
 action_wifi_scan(){
-    _iwctl station "$IWD_IFACE" scan
+    local DEV
+    DEV="$(ls /sys/class/net | grep -m1 '^wlan')"
+    $WIFICTL scan
     sleep 2
-    _iwctl station "$IWD_IFACE" get-networks
+    # Output in iwctl get-networks table format so parseWifiNets() in the
+    # launcher can parse it (looks for "---" header then ">" for connected).
+    iwctl station "${DEV}" get-networks 2>/dev/null
 }
 action_wifi_connect(){
     local SSID="${1:?SSID required}"
     local PASS="${2:-}"
-    if [[ -n "$PASS" ]]; then
-        local PROFILE_DIR="/var/lib/iwd"
-        mkdir -p "$PROFILE_DIR"
-        # iwd profile filename: spaces → underscores are NOT correct;
-        # iwd uses the literal SSID as filename. Wrap in quotes for safety.
-        local PROFILE_FILE="${PROFILE_DIR}/${SSID}.psk"
-        cat > "${PROFILE_FILE}" <<EOF
-[Security]
-Passphrase=${PASS}
-EOF
-        chmod 600 "${PROFILE_FILE}"
-    fi
-    _iwctl station "$IWD_IFACE" connect "$SSID"
-    if ! grep -q "EnableNetworkConfiguration.*true" /etc/iwd/main.conf 2>/dev/null; then
-        sleep 2
-        udhcpc -i "$IWD_IFACE" -n -q 2>/dev/null || dhclient "$IWD_IFACE" 2>/dev/null || true
-    fi
+    $WIFICTL connect "$SSID" "$PASS"
     log "Connected to $SSID."
 }
 action_wifi_disconnect(){
-    _iwctl station "$IWD_IFACE" disconnect
+    $WIFICTL disconnect
 }
 action_wifi_forget(){
     local SSID="${1:?SSID required}"
-    rm -f "/var/lib/iwd/${SSID}.psk" \
-          "/var/lib/iwd/${SSID}.8021x" \
-          "/var/lib/iwd/${SSID}.open" 2>/dev/null || true
-    _iwctl known-networks "$SSID" forget 2>/dev/null || true
+    local IWD_DIR="/storage/.cache/iwd"
+    rm -f "${IWD_DIR}/${SSID}.psk" \
+          "${IWD_DIR}/${SSID}.8021x" \
+          "${IWD_DIR}/${SSID}.open" 2>/dev/null || true
+    iwctl known-networks "$SSID" forget 2>/dev/null || true
     log "Forgotten: $SSID"
 }
 
