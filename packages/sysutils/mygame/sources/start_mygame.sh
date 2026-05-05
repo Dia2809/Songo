@@ -113,4 +113,29 @@ if [ -f "${GAMEDIR}/runtime/volume-indicator/teardown_vol_indicator" ]; then
   sh "${GAMEDIR}/runtime/volume-indicator/teardown_vol_indicator" "${SONGO_CFW_NAME}"
 fi
 
+# Build a gamecontrollerdb for the launcher by reading connected controller
+# GUIDs via list-guid, looking them up in the system DB, then swapping a<->b
+# and x<->y so that physical A (East) = SDL BUTTON_A and B (South) = SDL BUTTON_B
+# on Nintendo-layout handheld devices. No EmulationStation dependency.
+LAUNCHER_CTRLDB="/tmp/mygame-gamecontrollerdb.txt"
+SYSTEM_DB="/usr/config/SDL-GameControllerDB/gamecontrollerdb.txt"
+: > "${LAUNCHER_CTRLDB}"
+if command -v list-guid >/dev/null 2>&1 && [ -f "${SYSTEM_DB}" ]; then
+  while IFS= read -r GUID; do
+    [ -z "${GUID}" ] && continue
+    LINE="$(grep -m1 "^${GUID}," "${SYSTEM_DB}" 2>/dev/null)"
+    [ -z "${LINE}" ] && continue
+    # Swap a<->b and x<->y using placeholders to avoid double-substitution
+    LINE="$(printf '%s' "${LINE}" \
+      | sed 's/\ba:\([^,]*\),/__A__:\1,/g;
+             s/\bb:\([^,]*\),/a:\1,/g;
+             s/__A__:\([^,]*\),/b:\1,/g;
+             s/\bx:\([^,]*\),/__X__:\1,/g;
+             s/\by:\([^,]*\),/x:\1,/g;
+             s/__X__:\([^,]*\),/y:\1,/g')"
+    printf '%s\n' "${LINE}" >> "${LAUNCHER_CTRLDB}"
+  done < <(list-guid 2>/dev/null)
+fi
+[ -s "${LAUNCHER_CTRLDB}" ] && export SDL_GAMECONTROLLERCONFIG_FILE="${LAUNCHER_CTRLDB}"
+
 launcher
