@@ -112,7 +112,7 @@ mount_common() {
     mount $MOUNT_OPTIONS $1 $2 >&$SILENT_OUT 2>&1
     [ "$?" -eq "0" ] && ERR_ENV=0 && break
 
-    usleep 1000000
+    usleep 250000
   done
   [ "$ERR_ENV" -eq "0" ] && return 0
   error "mount_common" "Could not mount $1"
