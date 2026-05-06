@@ -1,6 +1,8 @@
 [Unit]
 Description=Set CPU frequency governor and its tunables
+DefaultDependencies=no
 ConditionPathExists=/usr/bin/cpufreq
+After=systemd-tmpfiles-setup.service
 
 [Service]
 Type=oneshot
@@ -8,4 +10,4 @@ ExecStart=/usr/bin/cpufreq
 RemainAfterExit=yes
 
 [Install]
-WantedBy=basic.target
+WantedBy=sysinit.target
