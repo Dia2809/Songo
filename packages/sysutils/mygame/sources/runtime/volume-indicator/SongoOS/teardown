@@ -1,10 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
 ORIGINAL="/usr/bin/volume"
-BACKUP="/tmp/songo-volume-original.sh"
-WRAPPER="/tmp/songo-volume-wrapper.sh"
+BACKUP="/tmp/rocknix-volume-original.sh"
+WRAPPER="/tmp/rocknix-volume-wrapper.sh"
 
 umount -l "$ORIGINAL"
 
-[ -f "$WRAPPER" ] && rm "$WRAPPER"
-[ -f "$BACKUP" ] && rm "$BACKUP"
+# Remove temp files
+if [ -f "$WRAPPER" ]; then
+    rm -f "$WRAPPER"
+fi
+
+if [ -f "$BACKUP" ]; then
+    rm -f "$BACKUP"
+fi

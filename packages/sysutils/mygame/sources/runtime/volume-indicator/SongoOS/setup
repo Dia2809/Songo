@@ -1,22 +1,42 @@
-#!/bin/bash
+#!/bin/sh
 
 ORIGINAL="/usr/bin/volume"
-BACKUP="/tmp/songo-volume-original.sh"
-WRAPPER="/tmp/songo-volume-wrapper.sh"
+BACKUP="/tmp/rocknix-volume-original.sh"
+WRAPPER="/tmp/rocknix-volume-wrapper.sh"
 
-cp "$ORIGINAL" "$BACKUP"
+if [ ! -f "$BACKUP" ]; then
+  echo "Backing up original script..."
+  cp "$ORIGINAL" "$BACKUP"
+else
+  echo "Backup already exists"
+fi
 
+echo "Creating wrapper script..."
 cat > "$WRAPPER" << 'EOF'
-#!/bin/bash
-ORIGINAL="/tmp/songo-volume-original.sh"
-"$ORIGINAL" "$@"
+#!/bin/sh
+
+# Call original script
+/tmp/rocknix-volume-original.sh "$@"
+
 . /etc/profile.d/001-functions
-VOL=$(get_setting "audio.volume")
-echo "$VOL" | nc -w 1 127.0.0.1 23456
+
+# Send new vol value to Godot
+HOST="127.0.0.1"
+PORT="23456"
+
+VAL=$(get_setting "audio.volume" 2>/dev/null | tr -d '\n\r')
+
+echo "$VAL" | nc "$HOST" "$PORT" 2>/dev/null &
 EOF
 
 chmod +x "$WRAPPER"
 
-if ! mountpoint -q "$ORIGINAL"; then
-    mount --bind "$WRAPPER" "$ORIGINAL"
+
+# Avoid double mount
+if findmnt -n "$ORIGINAL" >/dev/null 2>&1; then
+  echo "Already bind-mounted, skipping"
+  exit 0
 fi
+
+echo "Bind-mounting wrapper over original..."
+mount --bind "$WRAPPER" "$ORIGINAL"
