@@ -42,9 +42,9 @@ then
   done
 fi
 
-### Start the automount service (non-blocking - doesn't need to complete before UI)
+### Start the automount service
 tocon "Starting storage services..."
-systemctl start rocknix-automount --no-block
+systemctl start rocknix-automount
 
 ### Run common start scripts in parallel
 for script in /usr/lib/autostart/common/*

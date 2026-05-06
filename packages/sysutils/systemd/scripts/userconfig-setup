@@ -3,13 +3,12 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2017-present Team LibreELEC (https://libreelec.tv)
 
-STAMP=/storage/.config/.userconfig-version
-USR_CONFIG_VER=$(find /usr/config -newer /usr/config -maxdepth 0 -printf '%T@' 2>/dev/null || stat -c '%Y' /usr/config 2>/dev/null)
+. /etc/os-release
 
-# Skip the full scan if config hasn't changed since last run
-if [ -f "${STAMP}" ] && [ "$(cat ${STAMP} 2>/dev/null)" = "${USR_CONFIG_VER}" ]; then
-  exit 0
-fi
+STAMP="/storage/.cache/userconfig-${BUILD_ID:-0}"
+
+# Skip if this build's config was already applied
+[ -f "${STAMP}" ] && exit 0
 
 # Remove those sample files that we manage
 find /storage/.config -maxdepth 3 -name '*.sample' 2>/dev/null | while read sample; do
@@ -19,4 +18,5 @@ done
 # Copy config files, but don't overwrite - this should replace our sample files
 false | cp -iRp /usr/config/* /storage/.config/ &>/dev/null
 
-echo "${USR_CONFIG_VER}" > "${STAMP}"
+mkdir -p /storage/.cache
+touch "${STAMP}"
